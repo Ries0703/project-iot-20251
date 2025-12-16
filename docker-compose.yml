@@ -1,0 +1,72 @@
+services:
+  # TimescaleDB with PostGIS - Optimized for time-series IoT data
+  postgres:
+    image: timescale/timescaledb-ha:pg17  # TimescaleDB 2.24.0 + PostgreSQL 17 + PostGIS (Dec 2025)
+    container_name: cityear-timescaledb
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: cityear
+      POSTGRES_HOST_AUTH_METHOD: trust
+      # TimescaleDB configuration
+      TIMESCALEDB_TELEMETRY: 'off'
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cityear-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d cityear"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: >
+      postgres
+      -c shared_preload_libraries=timescaledb
+      -c max_connections=200
+
+  # EMQX MQTT Broker for IoT device communication
+  emqx:
+    image: emqx/emqx:6.0.1  # Latest stable version (Nov 2025)
+    container_name: cityear-emqx
+    ports:
+      - "1883:1883"    # MQTT TCP
+      - "8883:8883"    # MQTT SSL
+      - "8083:8083"    # MQTT WebSocket
+      - "8084:8084"    # MQTT WebSocket SSL
+      - "18083:18083"  # Dashboard
+    networks:
+      - cityear-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:18083/api/v5/status || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PgAdmin for database management (optional dev tool)
+  pgadmin:
+    image: dpage/pgadmin4:9.11  # Latest version (Dec 2025)
+    container_name: cityear-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@cityear.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_LISTEN_PORT: 80
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - cityear-network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  cityear-network:
+    driver: bridge

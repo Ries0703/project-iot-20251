@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "forceConsistentCasingInFileNames": false,
+    "noFallthroughCasesInSwitch": false,
+    "paths": {
+      "@cityear/common": [
+        "libs/common/src"
+      ],
+      "@cityear/common/*": [
+        "libs/common/src/*"
+      ],
+      "@cityear/database": [
+        "libs/database/src"
+      ],
+      "@cityear/database/*": [
+        "libs/database/src/*"
+      ]
+    }
+  }
+}

@@ -1,0 +1,165 @@
+Chào Dung, đây là bản kế hoạch chi tiết (Action Plan) để bạn triển khai dự án **"CityEar - Hệ thống giám sát an ninh đô thị qua âm thanh (Digital Twin Simulation)"** trong vòng 7 ngày.
+
+Kế hoạch này tận dụng tối đa kỹ năng Backend/K8s của bạn và loại bỏ hoàn toàn phần cứng vật lý.
+
+---
+
+###1. Bài toán & Giải pháp* **Tên đề tài:** Hệ thống mô phỏng giám sát ô nhiễm tiếng ồn và an ninh đô thị diện rộng (Large-scale Urban Noise & Security Monitoring Simulation).
+* **Vấn đề (Problem):** Các thành phố lớn gặp khó khăn trong việc phát hiện tức thời các sự cố an ninh (nổ súng, tai nạn, ẩu đả) hoặc giám sát mức độ ô nhiễm tiếng ồn tại hàng nghìn điểm khác nhau.
+* **Giải pháp (Solution):** Xây dựng hệ thống IoT tập trung, thu thập dữ liệu từ các "Smart Edge Devices" (giả lập). Các thiết bị này có khả năng AI tại biên (Edge AI) để phân loại âm thanh và gửi metadata về trung tâm xử lý.
+* **Điểm nhấn công nghệ:** Microservices Architecture, Kubernetes Orchestration, Real-time Processing (MQTT + WebSockets), Digital Twin Simulation.
+
+---
+
+###2. Các thành phần hệ thống (System Components)1. **IoT Simulator (The Edge):**
+* Gồm nhiều Pods chạy trên K8s.
+* Mỗi Pod giả lập hành vi của 50-100 cảm biến.
+* Chức năng: Sinh ngẫu nhiên sự kiện (`GUNSHOT`, `SCREAM`, `TRAFFIC`, `NORMAL`) kèm tọa độ GPS và gửi qua MQTT.
+
+
+2. **Message Broker:**
+* Sử dụng **EMQX** (hoặc Mosquitto) chạy trên K8s.
+* Nhiệm vụ: Hứng chịu tải cao từ hàng nghìn kết nối đồng thời.
+
+
+3. **Backend Services (NestJS):**
+* **Ingestion Service:** Subscribe MQTT, lọc nhiễu, lưu vào DB.
+* **Alert Service:** Phân tích dữ liệu nóng (Hot data), phát hiện bất thường -> Bắn socket ra Dashboard.
+
+
+4. **Database:**
+* **PostgreSQL:** Lưu trữ metadata sự kiện, danh sách thiết bị, lịch sử cảnh báo.
+
+
+5. **Dashboard (Frontend):**
+* **React/Next.js + Leaflet Map:** Hiển thị trực quan vị trí, trạng thái thời gian thực (xanh/đỏ) và biểu đồ thống kê.
+
+
+
+---
+
+###3. Kiến trúc hệ thống (High-Level Architecture)Bạn có thể vẽ lại sơ đồ này vào slide báo cáo:
+
+```mermaid
+graph LR
+    subgraph "K8s Cluster (Local/Cloud)"
+        subgraph "Simulation Layer"
+            Sim1[Simulator Pod 1] -->|MQTT Publish| Broker
+            Sim2[Simulator Pod 2] -->|MQTT Publish| Broker
+            SimN[Simulator Pod N] -->|MQTT Publish| Broker
+        end
+
+        subgraph "Transport Layer"
+            Broker[EMQX MQTT Broker]
+        end
+
+        subgraph "Processing Layer"
+            Broker -->|Subscribe| Ingest[NestJS Ingestion Service]
+            Ingest -->|Write| DB[(PostgreSQL)]
+            Ingest -->|Emit Event| Gateway[NestJS Gateway/API]
+        end
+    end
+
+    subgraph "User Layer"
+        Gateway -->|WebSocket/HTTP| Dash[React Dashboard]
+    end
+    
+    style Sim1 fill:#f9f,stroke:#333,stroke-width:2px
+    style Broker fill:#bbf,stroke:#333,stroke-width:2px
+    style DB fill:#bfb,stroke:#333,stroke-width:2px
+
+```
+
+---
+
+###4. Kế hoạch triển khai 7 ngày (1 Week Sprints)Giả định bạn dành khoảng 2-3 tiếng mỗi tối.
+
+####**Ngày 1: Dựng hạ tầng (Infrastructure as Code)*** **Mục tiêu:** Có môi trường K8s, Database và MQTT Broker chạy ổn định.
+* **Việc cần làm:**
+1. Khởi tạo Cluster: `kind create cluster --name cityear`.
+2. Cài đặt **EMQX** bằng Helm (dùng bản Open Source):
+* `helm repo add emqx https://repos.emqx.io/charts`
+* `helm install my-emqx emqx/emqx`
+* *Tip:* Expose port 1883 (MQTT) và 18083 (Dashboard quản lý của EMQX) ra localhost để dễ debug.
+
+
+3. Cài đặt **PostgreSQL** bằng Helm hoặc file yaml đơn giản.
+4. Dùng tool (như DBeaver) connect thử vào DB và MQTTX connect thử vào Broker xem thông chưa.
+
+
+
+####**Ngày 2: Viết Simulator (Trái tim của dự án)*** **Mục tiêu:** Tạo ra dòng dữ liệu giả lập (Data Stream).
+* **Việc cần làm:**
+1. Tạo project Node.js nhỏ.
+2. Code logic `Device` class:
+* Có ID, Kinh độ, Vĩ độ cố định.
+* Hàm `generateEvent()`: Random ra một object JSON.
+* *Ví dụ JSON:* `{ "id": "sensor-01", "lat": 21.028, "lng": 105.85, "type": "GUNSHOT", "level": 90, "ts": 171888... }`
+
+
+3. Code logic `Multiplexer`:
+* Vòng lặp `for (i=0; i<100; i++)` tạo ra 100 instance của class Device.
+* Mỗi device `setInterval` 5-10 giây gửi tin 1 lần.
+
+
+4. Chạy thử script này trên máy, mở MQTTX lên xem tin nhắn bay về chưa.
+
+
+
+####**Ngày 3: Backend Ingestion (Hứng dữ liệu)*** **Mục tiêu:** Lưu được dữ liệu giả lập vào Database.
+* **Việc cần làm:**
+1. Khởi tạo project NestJS.
+2. Cài module MQTT Microservice cho NestJS.
+3. Tạo Entity `EventLog` trong Postgres (TypeORM/Prisma).
+4. Viết Controller lắng nghe topic `city/sensors/+/events`.
+5. Nhận tin -> Validate -> `repo.save()`.
+
+
+
+####**Ngày 4: Business Logic & API*** **Mục tiêu:** Xử lý logic nghiệp vụ và mở cổng cho Frontend.
+* **Việc cần làm:**
+1. Viết API `GET /api/sensors`: Trả về danh sách tất cả sensor và trạng thái mới nhất của nó (để vẽ lên bản đồ).
+2. Viết API `GET /api/events`: Lấy lịch sử sự kiện (để vẽ biểu đồ).
+3. **Logic cảnh báo (Alert Logic):**
+* Trong lúc save event, check: `if (event.type === 'GUNSHOT' || event.type === 'SCREAM')` thì đánh dấu là `isAlert = true`.
+
+
+
+
+
+####**Ngày 5: Frontend Dashboard (Map)*** **Mục tiêu:** Hiển thị trực quan.
+* **Việc cần làm:**
+1. Khởi tạo React/Next.js (hoặc Vite cho nhanh).
+2. Cài `react-leaflet` và `leaflet`.
+3. Lấy bản đồ nền OpenStreetMap (free).
+4. Call API `GET /api/sensors` -> Loop qua mảng -> Render `<Marker position={[lat, lng]} />`.
+5. CSS đơn giản cho đẹp.
+
+
+
+####**Ngày 6: Real-time & WebSocket (Điểm cộng)*** **Mục tiêu:** Bản đồ nháy đỏ ngay lập tức khi có tiếng súng mà không cần F5.
+* **Việc cần làm:**
+1. **Backend:** Cài `socket.io`. Khi nhận được message MQTT có loại là `GUNSHOT`, bắn event qua socket: `server.emit('alert', data)`.
+2. **Frontend:** Lắng nghe socket event `alert`.
+3. Tìm cái Marker tương ứng trên bản đồ, đổi icon sang màu đỏ hoặc cho nó hiệu ứng rung lắc (CSS animation).
+
+
+
+####**Ngày 7: Đóng gói & Load Test*** **Mục tiêu:** Chuẩn bị demo hoành tráng.
+* **Việc cần làm:**
+1. **Dockerize:** Viết Dockerfile cho Simulator và Backend.
+2. **Deploy K8s:** Viết file `deployment.yaml`.
+* Scale Simulator lên 5-10 Pods (tương đương 500-1000 sensors).
+
+
+3. **Quay màn hình:** Quay cảnh Dashboard đang nhảy số liên tục và Log của K8s đang chạy ầm ầm (phòng trường hợp demo trực tiếp bị lỗi).
+4. Làm Slide báo cáo dựa trên architecture đã vẽ.
+
+
+
+---
+
+###Mẹo nhỏ cho Dung* **Dữ liệu GPS:** Đừng random GPS bừa bãi vì nó sẽ rải rác khắp thế giới. Hãy lên trang [geojson.io](http://geojson.io), khoanh một vùng nhỏ ở Hà Nội (ví dụ khu Bách Khoa), lấy tọa độ 4 góc, rồi viết code random tọa độ chỉ nằm trong khung hình chữ nhật đó. Nhìn demo sẽ rất thực tế.
+* **Âm thanh:** Nếu thầy hỏi "Module AI đâu?", hãy nói: *"Em sử dụng pre-trained model YAMNet của Google TensorFlow Lite giả định được nhúng vào chip ESP32, trong phạm vi đồ án này em tập trung vào khâu truyền tải và xử lý trung tâm."* (Nghe rất chuyên nghiệp và hợp lý).
+
+Bạn có muốn bắt đầu ngay với **Ngày 2 (Simulator Code)** không? Tôi có thể viết sẵn cho bạn cái khung sườn Node.js để sinh GPS và gửi MQTT.
