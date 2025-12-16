@@ -1,15 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "apps/consumer-service/src",
-  "compilerOptions": {
-    "webpack": false,
-    "tsConfigPath": "apps/consumer-service/tsconfig.app.json",
-    "builder": "swc",
-    "typeCheck": true
-  },
   "monorepo": true,
-  "root": "apps/consumer-service",
+  "compilerOptions": {
+    "webpack": true,
+    "deleteOutDir": true
+  },
   "projects": {
     "consumer-service": {
       "type": "application",
@@ -17,9 +13,7 @@
       "entryFile": "main",
       "sourceRoot": "apps/consumer-service/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/consumer-service/tsconfig.app.json",
-        "builder": "swc",
-        "typeCheck": true
+        "tsConfigPath": "apps/consumer-service/tsconfig.app.json"
       }
     },
     "api-service": {
@@ -28,9 +22,7 @@
       "entryFile": "main",
       "sourceRoot": "apps/api-service/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/api-service/tsconfig.app.json",
-        "builder": "swc",
-        "typeCheck": true
+        "tsConfigPath": "apps/api-service/tsconfig.app.json"
       }
     },
     "common": {
