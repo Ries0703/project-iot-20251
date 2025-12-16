@@ -1,8 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SensorEvent, EventType } from '@cityear/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ClientProxy } from '@nestjs/microservices';
 
 export interface SensorEventDto {
     id: string;
@@ -29,7 +30,9 @@ export class EventProcessingService implements OnModuleInit {
     constructor(
         @InjectRepository(SensorEvent)
         private sensorEventRepository: Repository<SensorEvent>,
+        @Inject('BROADCAST_SERVICE') private client: ClientProxy,
     ) { }
+
 
     onModuleInit() {
         this.logger.log('Event Processing Service initialized');
@@ -54,7 +57,8 @@ export class EventProcessingService implements OnModuleInit {
             // Immediate insert for alerts
             await this.insertSingleEvent(event);
 
-            // TODO: Broadcast via WebSocket
+            // Broadcast via MQTT
+            this.client.emit('city/internal/alerts', event);
             return;
         }
 
@@ -117,6 +121,14 @@ export class EventProcessingService implements OnModuleInit {
             );
 
             await this.sensorEventRepository.insert(entities);
+
+            // Broadcast updates for real-time map (Green/Yellow status)
+            // Determine if we should broadcast all or sample. 
+            // For 100 events/sec, broadcasting all is fine for internal demo.
+            this.client.emit('city/internal/updates', {
+                type: 'BATCH',
+                events: eventsToInsert
+            });
 
             const duration = Date.now() - startTime;
             this.stats.totalInserted += entities.length;

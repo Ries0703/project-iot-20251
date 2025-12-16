@@ -6,6 +6,7 @@ import { getTypeOrmConfig } from '@cityear/database';
 import { EventsController } from './events.controller';
 import { HealthController } from './health.controller';
 import { ApiServiceController } from './api-service.controller';
+import { EventsGateway } from './events.gateway';
 import { ApiServiceService } from './api-service.service';
 
 @Module({
@@ -27,6 +28,6 @@ import { ApiServiceService } from './api-service.service';
     TypeOrmModule.forFeature([SensorEvent]),
   ],
   controllers: [ApiServiceController, EventsController, HealthController],
-  providers: [ApiServiceService],
+  providers: [ApiServiceService, EventsGateway],
 })
 export class ApiServiceModule { }
