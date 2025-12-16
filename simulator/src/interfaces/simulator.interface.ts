@@ -23,4 +23,5 @@ export interface NoiseEvent {
     noiseLevel: number;
     eventType: 'NORMAL' | 'TRAFFIC' | 'GUNSHOT' | 'SCREAM';
     timestamp: string;
+    locationName?: string;
 }

@@ -58,6 +58,9 @@ export class SensorEvent {
     })
     location?: string; // WKT format or can be null
 
+    @Column({ type: 'text', nullable: true })
+    locationName?: string;
+
     @CreateDateColumn({ type: 'timestamp with time zone' })
     createdAt: Date;
 }

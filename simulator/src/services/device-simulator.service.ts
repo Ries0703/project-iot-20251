@@ -77,6 +77,7 @@ export class DeviceSimulatorService implements OnModuleInit {
                     noiseLevel: parseFloat(noiseData.level.toFixed(1)),
                     eventType: noiseData.eventType,
                     timestamp: new Date().toISOString(),
+                    locationName: device.district
                 };
 
                 await this.mqttService.publish(topic, event);
