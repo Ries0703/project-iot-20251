@@ -72,6 +72,13 @@ export class EventProcessingService implements OnModuleInit {
     }
 
     /**
+     * Broadcast status update immediately
+     */
+    async broadcastStatus(event: any): Promise<void> {
+        this.client.emit('city/internal/status', event);
+    }
+
+    /**
      * Insert single event immediately (for alerts)
      */
     private async insertSingleEvent(event: SensorEventDto): Promise<void> {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { useRealTimeConnection } from '@/hooks/use-realtime';
 import RealTimeFeed from '@/components/dashboard/RealTimeFeed';
@@ -20,7 +21,28 @@ const DeviceMap = dynamic(() => import('@/components/map/DeviceMap'), {
 export default function DashboardLayout() {
     const { isConnected } = useRealTimeConnection();
     const devices = useDeviceStore(state => state.devices);
+    const syncDeviceList = useDeviceStore(state => state.syncDeviceList);
     const deviceCount = Object.keys(devices).length;
+
+    // Fetch authorized devices from Simulator on mount
+    const SIMULATOR_API = process.env.NEXT_PUBLIC_SIMULATOR_API_URL || 'http://localhost:3001';
+
+    useEffect(() => {
+        const initDevices = async () => {
+            try {
+                const res = await fetch(`${SIMULATOR_API}/devices`);
+                if (res.ok) {
+                    const data = await res.json();
+                    syncDeviceList(data);
+                    console.log(`✅ Authorized ${data.length} devices from Simulator`);
+                }
+            } catch (err) {
+                console.error("Failed to fetch authorized devices:", err);
+            }
+        };
+
+        initDevices();
+    }, []);
 
     // Calculate average noise
     const avgNoise = deviceCount > 0

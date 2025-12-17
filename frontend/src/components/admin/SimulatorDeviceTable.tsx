@@ -58,27 +58,7 @@ export function SimulatorDeviceTable() {
         }
     };
 
-    const cleanupGhosts = async () => {
-        if (!confirm('This will delete all manually created devices (Ghost IDs). Are you sure?')) return;
 
-        const ghosts = devices.filter(d => !d.id.match(/^device-\d{4}$/));
-        if (ghosts.length === 0) {
-            toast.info('No ghost devices found!', { description: 'All devices match standard pattern device-XXXX' });
-            return;
-        }
-
-        let deleted = 0;
-        for (const ghost of ghosts) {
-            try {
-                await fetch(`${SIMULATOR_API}/devices/${ghost.id}`, { method: 'DELETE' });
-                deleted++;
-            } catch (e) {
-                console.error(e);
-            }
-        }
-        toast.success(`Deleted ${deleted} ghost devices.`);
-        fetchDevices();
-    };
 
     useEffect(() => {
         fetchDevices();
@@ -256,15 +236,7 @@ export function SimulatorDeviceTable() {
                     <div className="text-sm font-medium text-slate-400">
                         Total: <span className="text-slate-100 font-bold">{devices.length}</span>
                     </div>
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        className="h-9 bg-rose-950 text-rose-500 border border-rose-900 hover:bg-rose-900"
-                        onClick={cleanupGhosts}
-                    >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Cleanup Ghosts
-                    </Button>
+
                 </div>
             </div>
 

@@ -19,6 +19,7 @@ interface DeviceState {
 
     // Actions
     updateDevices: (events: DeviceData[]) => void;
+    removeDevice: (deviceId: string) => void;
     addAlert: (alert: DeviceData) => void;
     setInitialDevices: (devices: DeviceData[]) => void;
     syncDeviceList: (devices: any[]) => void; // Syncs state from REST API list
@@ -37,11 +38,17 @@ export const useDeviceStore = create<DeviceState>((set) => ({
                 newDevices[event.deviceId] = {
                     ...newDevices[event.deviceId],
                     ...event,
-                    isActive: newDevices[event.deviceId].isActive ?? true,
+
                     lastSeen: Date.now()
                 };
             }
         });
+        return { devices: newDevices };
+    }),
+
+    removeDevice: (deviceId) => set((state) => {
+        const newDevices = { ...state.devices };
+        delete newDevices[deviceId];
         return { devices: newDevices };
     }),
 
@@ -90,7 +97,7 @@ export const useDeviceStore = create<DeviceState>((set) => ({
                 eventType: existing?.eventType ?? 'NORMAL',
                 timestamp: existing?.timestamp ?? new Date().toISOString(),
                 lastSeen: existing?.lastSeen ?? Date.now(),
-                isActive: Boolean(d.isActive), // Force boolean (handle SQLite 0/1)
+                isActive: d.isActive === true || d.isActive === 'true' || d.isActive === 1 || d.isActive === '1',
                 locationName: d.name
             };
         });

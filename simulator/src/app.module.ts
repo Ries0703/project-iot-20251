@@ -32,4 +32,4 @@ import { SimulatedDevice } from './entities/simulated-device.entity';
     DeviceSimulatorService,
   ],
 })
-export class AppModule { }
+export class AppModule {}

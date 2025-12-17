@@ -97,6 +97,9 @@ export class EventsGateway
                 this.logger.debug(`Broadcasting Alert: ${payload.id}`);
             } else if (topic.includes('updates')) {
                 this.server.emit('update', payload);
+            } else if (topic.includes('status')) {
+                this.server.emit('status', payload);
+                this.logger.debug(`Broadcasting Status: ${payload.deviceId} -> ${payload.status}`);
             }
         } catch (e) {
             this.logger.error(`Error parsing MQTT message: ${e.message}`);

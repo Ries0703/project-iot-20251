@@ -23,4 +23,21 @@ export class MqttConsumerController {
             this.logger.error(`Failed to process event: ${error.message}`, error.stack);
         }
     }
+
+    /**
+     * Subscribe to MQTT topic: city/sensors/status
+     */
+    @MessagePattern('city/sensors/status')
+    async handleStatusEvent(
+        @Payload() event: any,
+        @Ctx() context: MqttContext,
+    ): Promise<void> {
+        try {
+            this.logger.log(`Status update: ${event.deviceId} is ${event.status}`);
+            // Forward to Gateway via internal MQTT
+            await this.eventProcessingService.broadcastStatus(event);
+        } catch (error) {
+            this.logger.error(`Failed to process status: ${error.message}`, error.stack);
+        }
+    }
 }
