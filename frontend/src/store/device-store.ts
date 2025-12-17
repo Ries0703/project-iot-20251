@@ -10,6 +10,7 @@ export interface DeviceData {
     timestamp: string;
     lastSeen: number;
     locationName?: string;
+    isActive?: boolean;
 }
 
 interface DeviceState {
@@ -20,6 +21,7 @@ interface DeviceState {
     updateDevices: (events: DeviceData[]) => void;
     addAlert: (alert: DeviceData) => void;
     setInitialDevices: (devices: DeviceData[]) => void;
+    syncDeviceList: (devices: any[]) => void; // Syncs state from REST API list
 }
 
 export const useDeviceStore = create<DeviceState>((set) => ({
@@ -29,24 +31,33 @@ export const useDeviceStore = create<DeviceState>((set) => ({
     updateDevices: (events) => set((state) => {
         const newDevices = { ...state.devices };
         events.forEach(event => {
-            newDevices[event.deviceId] = {
-                ...event,
-                lastSeen: Date.now()
-            };
+            // STRICT MODE: Only update if device ALREADY exists (Authorized by API List)
+            // This prevents "Ghost Devices" from external scripts or stale sessions from polluting the map.
+            if (newDevices[event.deviceId]) {
+                newDevices[event.deviceId] = {
+                    ...newDevices[event.deviceId],
+                    ...event,
+                    isActive: newDevices[event.deviceId].isActive ?? true,
+                    lastSeen: Date.now()
+                };
+            }
         });
         return { devices: newDevices };
     }),
 
     addAlert: (alert) => set((state) => {
-        // Keep only last 20 alerts
-        const newAlerts = [alert, ...state.alerts].slice(0, 20);
+        // Keep only last 100 alerts
+        const newAlerts = [alert, ...state.alerts].slice(0, 100);
 
         // Also update the device state to reflect the alert status immediately
         const newDevices = { ...state.devices };
+
+        // STRICT MODE: Only update map if device is AUTHORIZED (exists in table list)
         if (newDevices[alert.deviceId]) {
             newDevices[alert.deviceId] = {
                 ...newDevices[alert.deviceId],
                 ...alert,
+                isActive: true, // Alerts imply activity (if device exists)
                 lastSeen: Date.now()
             };
         }
@@ -57,8 +68,33 @@ export const useDeviceStore = create<DeviceState>((set) => ({
     setInitialDevices: (devices) => set(() => {
         const deviceMap: Record<string, DeviceData> = {};
         devices.forEach(d => {
-            deviceMap[d.deviceId] = { ...d, lastSeen: Date.now() };
+            deviceMap[d.deviceId] = { ...d, lastSeen: Date.now(), isActive: true };
         });
         return { devices: deviceMap };
+    }),
+
+    syncDeviceList: (apiDevices) => set((state) => {
+        // Create a FRESH map to ensure we remove deleted devices (Garbage Collection)
+        const newDevices: Record<string, DeviceData> = {};
+
+        apiDevices.forEach(d => {
+            const existing = state.devices[d.id];
+            // Merge existing dynamic data (noise, event) with new static data from API
+            newDevices[d.id] = {
+                id: d.id,
+                deviceId: d.id,
+                lat: d.lat,
+                lng: d.lng,
+                // Preserve state if exists, otherwise default
+                noiseLevel: existing?.noiseLevel ?? 0,
+                eventType: existing?.eventType ?? 'NORMAL',
+                timestamp: existing?.timestamp ?? new Date().toISOString(),
+                lastSeen: existing?.lastSeen ?? Date.now(),
+                isActive: Boolean(d.isActive), // Force boolean (handle SQLite 0/1)
+                locationName: d.name
+            };
+        });
+
+        return { devices: newDevices };
     })
 }));

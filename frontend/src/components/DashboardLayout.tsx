@@ -40,6 +40,16 @@ export default function DashboardLayout() {
                     </h1>
                 </div>
 
+                <div className="flex items-center gap-4">
+                    <a
+                        href="/admin/devices"
+                        target="_blank"
+                        className="px-3 py-1.5 text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 rounded-md hover:bg-indigo-500/20 transition-colors"
+                    >
+                        Manage Devices
+                    </a>
+                </div>
+
                 <div className="flex items-center gap-6 text-sm">
                     <div className="flex items-center gap-2 text-slate-400">
                         <MapPin className="w-4 h-4" />

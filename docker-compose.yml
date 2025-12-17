@@ -59,7 +59,79 @@ services:
     networks:
       - cityear-network
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+
+  backend-api:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cityear-api
+    command: ["node", "dist/apps/api-service/main"]
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=admin
+      - DB_PASSWORD=admin
+      - DB_NAME=cityear
+      - MQTT_BROKER_URL=mqtt://emqx:1883
+    depends_on:
+      emqx:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - cityear-network
+
+  backend-consumer:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cityear-consumer
+    command: ["node", "dist/apps/consumer-service/main"]
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=admin
+      - DB_PASSWORD=admin
+      - DB_NAME=cityear
+      - MQTT_BROKER_URL=mqtt://emqx:1883
+    depends_on:
+      emqx:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - cityear-network
+
+  simulator:
+    build: ./simulator
+    container_name: cityear-simulator
+    ports:
+      - "3001:3001"
+    environment:
+      - MQTT_BROKER_URL=mqtt://emqx:1883
+      - DEVICE_COUNT=50
+    depends_on:
+      emqx:
+        condition: service_healthy
+    networks:
+      - cityear-network
+
+  frontend:
+    build: ./frontend
+    container_name: cityear-frontend
+    ports:
+      - "3002:3000"
+    environment:
+      - NEXT_PUBLIC_SOCKET_URL=http://localhost:3000
+      - API_URL=http://backend-api:3000
+    depends_on:
+      - backend-api
+    networks:
+      - cityear-network
 
 volumes:
   postgres_data:
