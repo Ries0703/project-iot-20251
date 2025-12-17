@@ -12,19 +12,13 @@ services:
       TIMESCALEDB_TELEMETRY: 'off'
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - cityear-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d cityear"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     command: >
       postgres
       -c shared_preload_libraries=timescaledb
       -c max_connections=200
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   # EMQX MQTT Broker for IoT device communication
   emqx:
@@ -114,6 +108,8 @@ services:
     environment:
       - MQTT_BROKER_URL=mqtt://emqx:1883
       - DEVICE_COUNT=50
+    volumes:
+      - ./simulator/simulator.db:/usr/src/app/simulator.db
     depends_on:
       emqx:
         condition: service_healthy
