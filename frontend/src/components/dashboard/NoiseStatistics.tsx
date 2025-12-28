@@ -28,7 +28,7 @@ export default function NoiseStatistics() {
     }, [devices]);
 
     return (
-        <Card className="h-full border-slate-800 bg-slate-900/50">
+        <Card className="h-full border-border bg-card">
             <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-slate-400 uppercase tracking-wide">
                     Noise Distribution
@@ -36,7 +36,7 @@ export default function NoiseStatistics() {
             </CardHeader>
             <CardContent className="h-[180px]">
                 <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={stats}>
+                    <BarChart data={stats} className="!outline-none focus:outline-none">
                         <XAxis
                             dataKey="name"
                             tick={{ fill: '#94a3b8', fontSize: 10 }}

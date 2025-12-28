@@ -9,6 +9,7 @@ import {
     getPaginationRowModel,
 } from '@tanstack/react-table';
 import { useDeviceStore } from '@/store/device-store';
+import { useConfirm } from '@/components/providers/confirm-modal-provider';
 import { SimulatedDevice } from '@/types/simulator';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,12 +21,15 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Siren, Volume2, Power, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Siren, Volume2, Power, Trash2, ChevronLeft, ChevronRight, ChevronDown, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 const SIMULATOR_API = process.env.NEXT_PUBLIC_SIMULATOR_API_URL || 'http://localhost:3001';
 
 export function SimulatorDeviceTable() {
+    const { confirm } = useConfirm();
     const [devices, setDevices] = useState<SimulatedDevice[]>([]);
     const [loading, setLoading] = useState(true);
     const syncDeviceList = useDeviceStore((state) => state.syncDeviceList); // Import action
@@ -96,7 +100,18 @@ export function SimulatorDeviceTable() {
     };
 
     const handleDelete = async (device: SimulatedDevice) => {
-        if (!confirm(`Are you sure you want to delete ${device.name}?`)) return;
+        const confirmed = await confirm({
+            title: `Delete ${device.name}?`,
+            description: (
+                <span>
+                    This action cannot be undone. This will permanently delete <b>{device.id}</b> from the simulation.
+                </span>
+            ),
+            confirmText: 'Delete Device',
+            variant: 'destructive',
+        });
+
+        if (!confirmed) return;
 
         try {
             const res = await fetch(`${SIMULATOR_API}/devices/${device.id}`, {
@@ -115,13 +130,13 @@ export function SimulatorDeviceTable() {
             accessorKey: 'name',
             header: 'Environment', // Vercel style often implies "Project" or "Environment"
             cell: ({ row }) => (
-                <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shadow-inner">
+                <div className="flex items-center gap-3 py-1">
+                    <div className="h-6 w-6 rounded flex-none bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 flex items-center justify-center text-[10px] font-bold text-emerald-400 font-mono">
                         {row.original.name.substring(0, 2).toUpperCase()}
                     </div>
                     <div>
-                        <div className="font-semibold text-sm text-slate-100">{row.original.name}</div>
-                        <div className="text-[10px] text-slate-500 font-mono tracking-wide">{row.original.id}</div>
+                        <div className="font-medium text-xs text-slate-200">{row.original.name}</div>
+                        <div className="text-[10px] text-slate-500 font-mono">{row.original.id}</div>
                     </div>
                 </div>
             ),
@@ -130,11 +145,9 @@ export function SimulatorDeviceTable() {
             accessorKey: 'profile',
             header: 'Profile',
             cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="bg-slate-800 text-slate-400 hover:bg-slate-800 border-none font-normal">
-                        {row.original.profile}
-                    </Badge>
-                </div>
+                <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20 text-[10px] font-mono px-2 py-0 h-5">
+                    {row.original.profile}
+                </Badge>
             ),
         },
         {
@@ -142,9 +155,9 @@ export function SimulatorDeviceTable() {
             header: 'Status',
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
-                    <span className={`flex h-2 w-2 rounded-full ${row.original.isActive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-600'}`}></span>
-                    <span className={`text-sm font-medium ${row.original.isActive ? 'text-slate-200' : 'text-slate-500'}`}>
-                        {row.original.isActive ? 'Ready' : 'Stopped'}
+                    <div className={`h-1.5 w-1.5 rounded-full ${row.original.isActive ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-600'}`} />
+                    <span className={`text-xs font-medium ${row.original.isActive ? 'text-emerald-400' : 'text-slate-500'}`}>
+                        {row.original.isActive ? 'Online' : 'Offline'}
                     </span>
                 </div>
             ),
@@ -153,7 +166,7 @@ export function SimulatorDeviceTable() {
             accessorKey: 'coordinates',
             header: 'Location',
             cell: ({ row }) => (
-                <div className="font-mono text-xs text-slate-500">
+                <div className="text-xs text-slate-500">
                     {row.original.lat.toFixed(4)}, {row.original.lng.toFixed(4)}
                 </div>
             ),
@@ -219,34 +232,37 @@ export function SimulatorDeviceTable() {
     if (loading) return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
 
     return (
-        <div className="space-y-4">
+        <div className="rounded-xl border border-border bg-card shadow-xl overflow-hidden flex flex-col">
             {/* Header / Controls */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-                <div className="flex items-center gap-2 w-full max-w-sm">
-                    <input
-                        type="text"
-                        placeholder="Search by ID or Name..."
-                        className="flex h-9 w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-1 text-sm shadow-sm transition-colors text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-b border-border bg-white/[0.02]">
+                <div className="flex items-center gap-2 w-full max-w-sm relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                    <Input
+                        placeholder="Search devices..."
                         value={globalFilter}
                         onChange={(e) => setGlobalFilter(e.target.value)}
+                        className="bg-background border-border pl-9 text-slate-100 placeholder:text-slate-600 focus-visible:ring-emerald-500/50"
                     />
                 </div>
 
-                <div className="flex items-center gap-4">
-                    <div className="text-sm font-medium text-slate-400">
-                        Total: <span className="text-slate-100 font-bold">{devices.length}</span>
-                    </div>
-
+                <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-emerald-500/20">
+                        {filteredDevices.filter(d => d.isActive).length} Active
+                    </Badge>
+                    <Badge variant="secondary" className="bg-slate-500/10 text-slate-400 hover:bg-slate-500/20 border-slate-500/20">
+                        {filteredDevices.filter(d => !d.isActive).length} Inactive
+                    </Badge>
                 </div>
             </div>
 
-            <div className="rounded-lg border border-slate-800 bg-black overflow-hidden shadow-sm">
+            {/* Table Area - No double borders */}
+            <div className="overflow-x-auto">
                 <Table>
-                    <TableHeader className="bg-slate-900/50">
+                    <TableHeader className="bg-transparent border-b border-border">
                         {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id} className="border-slate-800 hover:bg-transparent">
+                            <TableRow key={headerGroup.id} className="border-border hover:bg-transparent">
                                 {headerGroup.headers.map((header) => (
-                                    <TableHead key={header.id} className="h-10 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                    <TableHead key={header.id} className="h-9 text-[10px] font-bold text-slate-500 uppercase tracking-wider pl-4 bg-card/50">
                                         {header.isPlaceholder
                                             ? null
                                             : flexRender(
@@ -264,10 +280,10 @@ export function SimulatorDeviceTable() {
                                 <TableRow
                                     key={row.id}
                                     data-state={row.getIsSelected() && "selected"}
-                                    className="group border-slate-800 transition-colors hover:bg-slate-900/30"
+                                    className="group border-border transition-colors hover:bg-white/[0.02]"
                                 >
                                     {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id} className="py-3">
+                                        <TableCell key={cell.id} className="py-2 pl-4 border-b border-border/50">
                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                         </TableCell>
                                     ))}
@@ -275,8 +291,13 @@ export function SimulatorDeviceTable() {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 text-center text-slate-500">
-                                    No devices found. Deploy one to get started.
+                                <TableCell colSpan={columns.length} className="h-32 text-center text-slate-500">
+                                    <div className="flex flex-col items-center justify-center gap-2">
+                                        <div className="p-3 rounded-full bg-slate-800/50 text-slate-600">
+                                            <Siren className="w-6 h-6" />
+                                        </div>
+                                        <p>No devices found matching your criteria</p>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         )}
@@ -284,43 +305,47 @@ export function SimulatorDeviceTable() {
                 </Table>
             </div>
 
-            {/* Pagination Controls - Clean, grouped on the right */}
-            <div className="flex items-center justify-end gap-6 py-2 px-2">
-                <div className="flex items-center gap-2">
-                    <span className="text-xs text-slate-500">Rows per page</span>
-                    <select
-                        className="h-8 w-16 rounded border border-slate-800 bg-slate-950 text-xs text-slate-300 focus:border-indigo-500 focus:ring-0 focus:outline-none"
-                        value={table.getState().pagination.pageSize}
-                        onChange={e => {
-                            table.setPageSize(Number(e.target.value))
-                        }}
-                    >
-                        {[10, 20, 30, 40, 50].map(pageSize => (
-                            <option key={pageSize} value={pageSize}>
-                                {pageSize}
-                            </option>
-                        ))}
-                    </select>
+            {/* Pagination Controls - Footer Style */}
+            <div className="flex items-center justify-between border-t border-border bg-white/[0.02] p-2 px-4">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <span>Show</span>
+                    <div className="flex items-center gap-2">
+                        <Select
+                            value={String(table.getState().pagination.pageSize)}
+                            onValueChange={value => table.setPageSize(Number(value))}
+                        >
+                            <SelectTrigger className="h-7 w-[4.5rem] bg-background/50 border-border text-xs text-slate-300">
+                                <SelectValue placeholder={table.getState().pagination.pageSize} />
+                            </SelectTrigger>
+                            <SelectContent side="top">
+                                {[10, 20, 50, 100].map(pageSize => (
+                                    <SelectItem key={pageSize} value={String(pageSize)}>
+                                        {pageSize}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <span className="text-xs text-slate-500 min-w-[4rem] text-right">
+                <div className="flex items-center gap-4">
+                    <span className="text-xs text-slate-500">
                         Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
                     </span>
                     <div className="flex items-center gap-1">
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon"
-                            className="h-8 w-8 border-slate-800 bg-slate-950 text-slate-400 hover:bg-slate-900 hover:text-white disabled:opacity-30 transition-colors"
+                            className="h-7 w-7 border border-transparent hover:border-border hover:bg-white/5 text-slate-400 disabled:opacity-30 disabled:hover:bg-transparent"
                             onClick={() => table.previousPage()}
                             disabled={!table.getCanPreviousPage()}
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             size="icon"
-                            className="h-8 w-8 border-slate-800 bg-slate-950 text-slate-400 hover:bg-slate-900 hover:text-white disabled:opacity-30 transition-colors"
+                            className="h-7 w-7 border border-transparent hover:border-border hover:bg-white/5 text-slate-400 disabled:opacity-30 disabled:hover:bg-transparent"
                             onClick={() => table.nextPage()}
                             disabled={!table.getCanNextPage()}
                         >

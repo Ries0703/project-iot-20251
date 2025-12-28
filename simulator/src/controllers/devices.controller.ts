@@ -39,6 +39,7 @@ export class DevicesController {
       lat: number;
       lng: number;
       profile?: DeviceProfile;
+      isActive?: boolean;
     },
   ) {
     const device = this.deviceRepo.create({
@@ -47,13 +48,15 @@ export class DevicesController {
       lat: body.lat,
       lng: body.lng,
       profile: body.profile || DeviceProfile.QUIET_RESIDENTIAL,
-      isActive: true,
+      isActive: body.isActive ?? true,
     });
 
     await this.deviceRepo.save(device);
 
-    // Trigger Connect immediately
-    await this.simulatorService.emitStatus(device, 'ONLINE');
+    // Trigger Connect only if active
+    if (device.isActive) {
+      await this.simulatorService.emitStatus(device, 'ONLINE');
+    }
 
     return device;
   }

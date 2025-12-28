@@ -12,6 +12,13 @@ services:
       TIMESCALEDB_TELEMETRY: 'off'
     ports:
       - "5432:5432"
+    networks:
+      - cityear-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d cityear"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     command: >
       postgres
       -c shared_preload_libraries=timescaledb
@@ -107,7 +114,7 @@ services:
       - "3001:3001"
     environment:
       - MQTT_BROKER_URL=mqtt://emqx:1883
-      - DEVICE_COUNT=50
+      - DEVICE_COUNT=500
     volumes:
       - ./simulator/simulator.db:/usr/src/app/simulator.db
     depends_on:

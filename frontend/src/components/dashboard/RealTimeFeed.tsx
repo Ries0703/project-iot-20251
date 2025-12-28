@@ -10,7 +10,7 @@ export default function RealTimeFeed() {
 
     if (alerts.length === 0) {
         return (
-            <Card className="h-full border-slate-800 bg-slate-900/50">
+            <Card className="h-full border-border bg-card">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-slate-100">
                         <AlertCircle className="w-5 h-5 text-emerald-500" />
@@ -28,8 +28,8 @@ export default function RealTimeFeed() {
     }
 
     return (
-        <Card className="h-full border-slate-800 bg-slate-900/50 flex flex-col">
-            <CardHeader className="pb-3 border-b border-slate-800">
+        <Card className="h-full border-border bg-card flex flex-col">
+            <CardHeader className="pb-3 border-b border-border">
                 <CardTitle className="flex items-center gap-2 text-slate-100">
                     <AlertCircle className="w-5 h-5 text-rose-500 animate-pulse" />
                     Live Alerts ({alerts.length})
@@ -49,7 +49,7 @@ export default function RealTimeFeed() {
                                 <h4 className="font-bold text-rose-400 text-sm uppercase tracking-wider">
                                     {alert.eventType}
                                 </h4>
-                                <span className="text-[10px] text-slate-400 font-mono">
+                                <span className="text-[10px] text-slate-400">
                                     {new Date(alert.timestamp).toLocaleTimeString()}
                                 </span>
                             </div>
@@ -66,7 +66,7 @@ export default function RealTimeFeed() {
                                     {alert.noiseLevel.toFixed(1)} dB
                                 </span>
                             </div>
-                            <div className="mt-1 text-[9px] font-mono text-slate-500">
+                            <div className="mt-1 text-[9px] text-slate-500">
                                 {alert.lat.toFixed(4)}, {alert.lng.toFixed(4)}
                             </div>
                         </div>

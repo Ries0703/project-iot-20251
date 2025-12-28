@@ -8,6 +8,7 @@ import { Copy, MapPin, FileJson, FileText, X } from 'lucide-react';
 import { toast } from 'sonner';
 import copy from 'copy-to-clipboard';
 import L from 'leaflet';
+import { Card } from '@/components/ui/card';
 
 // Hanoi coordinates
 const CENTER: [number, number] = [21.0285, 105.8542];
@@ -118,8 +119,8 @@ const ContextMenuInspector = () => {
     });
 
     const handleCopy = (text: string, label: string) => {
-        // "Nuclear option": Window.prompt is the only 100% way to show text for copy in strict environments
-        window.prompt(`Press Ctrl+C to copy ${label}:`, text);
+        copy(text);
+        toast.success(`${label} copied to clipboard!`);
         setMenuPosition(null);
     };
 
@@ -191,13 +192,13 @@ export default function DeviceMap() {
     const deviceList = useMemo(() => Object.values(devices), [devices]);
 
     return (
-        <div className="w-full h-full min-h-[500px] relative rounded-lg overflow-hidden border border-slate-800 shadow-xl bg-slate-900">
+        <div className="w-full h-full relative group">
             <MapContainer
                 center={CENTER}
                 zoom={14}
                 scrollWheelZoom={true}
-                style={{ height: "100%", width: "100%" }}
-                className="z-0"
+                style={{ height: "100%", width: "100%", outline: "none" }}
+                className="z-0 outline-none focus:outline-none"
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -212,23 +213,30 @@ export default function DeviceMap() {
                 ))}
             </MapContainer>
 
-            <div className="absolute top-4 right-4 z-[1000] bg-slate-900/90 p-3 rounded-md border border-slate-700 text-xs text-slate-200">
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="w-3 h-3 rounded-full bg-white border border-slate-500"></span> Inactive (OFF)
+            <Card className="absolute top-4 right-4 z-[1000] w-fit p-3 bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/60 border-border shadow-lg">
+                <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-white border border-border"></span>
+                        <span className="text-[10px] font-medium text-muted-foreground">Inactive</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></span>
+                        <span className="text-[10px] font-medium text-muted-foreground">Normal (&lt;50dB)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.4)]"></span>
+                        <span className="text-[10px] font-medium text-muted-foreground">High (&gt;50dB)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]"></span>
+                        <span className="text-[10px] font-medium text-muted-foreground">Very High (&gt;80dB)</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse shadow-[0_0_12px_rgba(225,29,72,0.6)]"></span>
+                        <span className="text-[10px] font-bold text-rose-500">ALERT (Gunshot)</span>
+                    </div>
                 </div>
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="w-3 h-3 rounded-full bg-emerald-500"></span> Normal (&lt;50dB)
-                </div>
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="w-3 h-3 rounded-full bg-yellow-500"></span> High (&gt;50dB)
-                </div>
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="w-3 h-3 rounded-full bg-amber-500"></span> Very High (&gt;80dB)
-                </div>
-                <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-rose-600 animate-pulse"></span> ALERT (Gunshot)
-                </div>
-            </div>
+            </Card>
         </div>
     );
 }

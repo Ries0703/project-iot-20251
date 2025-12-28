@@ -3,6 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
 interface CreateDeviceSheetProps {
@@ -95,11 +99,11 @@ export function CreateDeviceSheet({ isOpen, onClose, onSuccess }: CreateDeviceSh
 
             {/* Slide-in Panel */}
             <div
-                className={`relative w-full max-w-md h-full bg-slate-950 border-l border-slate-800 shadow-2xl transform transition-transform duration-300 ease-in-out ${isVisible ? 'translate-x-0' : 'translate-x-full'}`}
+                className={`relative w-full max-w-md h-full bg-card border-l border-border shadow-2xl transform transition-transform duration-300 ease-in-out ${isVisible ? 'translate-x-0' : 'translate-x-full'}`}
             >
                 <div className="h-full flex flex-col">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                         <div>
                             <h2 className="text-lg font-semibold text-slate-50">Add New Device</h2>
                             <p className="text-sm text-slate-400">Deploy a new sensor to the network.</p>
@@ -114,80 +118,75 @@ export function CreateDeviceSheet({ isOpen, onClose, onSuccess }: CreateDeviceSh
                         <form id="create-device-form" onSubmit={handleSubmit} className="space-y-6">
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-200">Device Name</label>
-                                <input
-                                    type="text"
-                                    required
+                                <Label className="text-slate-200">Device Name</Label>
+                                <Input
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="e.g., Hoan Kiem Sensor #9000"
-                                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-md text-sm text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                    className="bg-background border-border text-slate-50 focus-visible:ring-emerald-500/50"
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-200">Latitude</label>
-                                    <input
+                                    <Label className="text-slate-200">Latitude</Label>
+                                    <Input
                                         type="number"
-                                        step="any"
-                                        required
+                                        step="0.0001"
                                         value={lat}
                                         onChange={(e) => setLat(e.target.value)}
-                                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-md text-sm text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        className="bg-background border-border text-slate-50 focus-visible:ring-emerald-500/50"
+                                        showSpinner
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium text-slate-200">Longitude</label>
-                                    <input
+                                    <Label className="text-slate-200">Longitude</Label>
+                                    <Input
                                         type="number"
-                                        step="any"
-                                        required
+                                        step="0.0001"
                                         value={lng}
                                         onChange={(e) => setLng(e.target.value)}
-                                        className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-md text-sm text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                                        className="bg-background border-border text-slate-50 focus-visible:ring-emerald-500/50"
+                                        showSpinner
                                     />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-slate-200">Profile</label>
-                                <select
-                                    value={profile}
-                                    onChange={(e) => setProfile(e.target.value)}
-                                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-md text-sm text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                                >
-                                    <option value="QUIET_RESIDENTIAL">Quiet Residential</option>
-                                    <option value="BUSY_INTERSECTION">Busy Intersection</option>
-                                    <option value="MARKET">Market</option>
-                                </select>
+                                <Label className="text-slate-200">Profile</Label>
+                                <Select value={profile} onValueChange={setProfile}>
+                                    <SelectTrigger className="bg-background border-border text-slate-50 focus:ring-emerald-500/50">
+                                        <SelectValue placeholder="Select profile" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="QUIET_RESIDENTIAL">Quiet Residential</SelectItem>
+                                        <SelectItem value="BUSY_INTERSECTION">Busy Intersection</SelectItem>
+                                        <SelectItem value="MARKET">Market</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
-                            <div className="flex items-center justify-between p-4 bg-slate-900 rounded-lg border border-slate-800">
+                            <div className="flex items-center justify-between p-4 bg-background rounded-lg border border-border">
                                 <div className="space-y-0.5">
-                                    <label className="text-sm font-medium text-slate-200">Active Status</label>
+                                    <Label className="text-base text-slate-200">Active Status</Label>
                                     <p className="text-xs text-slate-400">Enable data collection immediately</p>
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={isActive}
-                                        onChange={(e) => setIsActive(e.target.checked)}
-                                        className="sr-only peer"
-                                    />
-                                    <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                                </label>
+                                <Switch
+                                    checked={isActive}
+                                    onCheckedChange={setIsActive}
+                                    className="data-[state=checked]:bg-emerald-600"
+                                />
                             </div>
 
                         </form>
                     </div>
 
                     {/* Footer / Actions */}
-                    <div className="p-6 border-t border-slate-800 bg-slate-900/50 flex justify-end gap-3">
-                        <Button variant="outline" onClick={onClose} disabled={loading} className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white">
+                    <div className="p-6 border-t border-border bg-card/50 flex justify-end gap-3">
+                        <Button variant="outline" onClick={onClose} disabled={loading} className="border-border text-slate-400 hover:bg-white/5 hover:text-white">
                             Cancel
                         </Button>
-                        <Button type="submit" form="create-device-form" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                        <Button type="submit" form="create-device-form" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 text-white">
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Create Device
                         </Button>

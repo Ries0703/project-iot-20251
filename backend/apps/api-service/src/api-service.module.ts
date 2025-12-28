@@ -8,6 +8,8 @@ import { HealthController } from './health.controller';
 import { ApiServiceController } from './api-service.controller';
 import { EventsGateway } from './events.gateway';
 import { ApiServiceService } from './api-service.service';
+import { AnalyticsController } from './analytics.controller';
+import { AnalyticsService } from './analytics.service';
 
 @Module({
   imports: [
@@ -27,7 +29,7 @@ import { ApiServiceService } from './api-service.service';
     // Register shared entities
     TypeOrmModule.forFeature([SensorEvent]),
   ],
-  controllers: [ApiServiceController, EventsController, HealthController],
-  providers: [ApiServiceService, EventsGateway],
+  controllers: [ApiServiceController, EventsController, HealthController, AnalyticsController],
+  providers: [ApiServiceService, EventsGateway, AnalyticsService],
 })
 export class ApiServiceModule { }
