@@ -1,0 +1,78 @@
+// Grafana Alloy Configuration for CityEar IoT Observability
+// https://grafana.com/docs/alloy/latest/
+
+// ============================================================================
+// LOGGING CONFIGURATION
+// ============================================================================
+logging {
+  level  = "debug"
+  format = "logfmt"
+}
+
+// ============================================================================
+// POSTGRESQL METRICS EXPORTER
+// ============================================================================
+prometheus.exporter.postgres "timescaledb" {
+  data_source_names = ["postgresql://admin:admin@postgres:5432/cityear?sslmode=disable"]
+}
+
+prometheus.scrape "postgres" {
+  targets    = prometheus.exporter.postgres.timescaledb.targets
+  forward_to = [prometheus.remote_write.local.receiver]
+  
+  scrape_interval = "15s"
+}
+
+// ============================================================================
+// EMQX MQTT BROKER METRICS
+// ============================================================================
+prometheus.scrape "emqx" {
+  targets = [{
+    __address__ = "emqx:18083",
+    __metrics_path__ = "/api/v5/prometheus/stats",
+  }]
+  
+  forward_to = [prometheus.remote_write.local.receiver]
+  scrape_interval = "15s"
+}
+
+// ============================================================================
+// DOCKER CONTAINER LOG COLLECTION
+// ============================================================================
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+loki.source.docker "containers" {
+  host       = "unix:///var/run/docker.sock"
+  targets    = discovery.docker.containers.targets
+  forward_to = [loki.write.local.receiver]
+}
+
+// ============================================================================
+// LOCAL PROMETHEUS REMOTE WRITE
+// ============================================================================
+prometheus.remote_write "local" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+    
+    queue_config {
+      capacity             = 10000
+      max_shards           = 10
+      min_shards           = 1
+      max_samples_per_send = 5000
+      batch_send_deadline  = "5s"
+      min_backoff          = "30ms"
+      max_backoff          = "5s"
+    }
+  }
+}
+
+// ============================================================================
+// LOCAL LOKI WRITE
+// ============================================================================
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
