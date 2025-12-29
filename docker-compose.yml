@@ -26,6 +26,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    logging:
+      driver: "json-file"
+      options:
+        labels: "service_name"
+    labels:
+      service_name: "timescaledb"
 
   # EMQX MQTT Broker for IoT device communication
   emqx:
@@ -44,6 +50,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        labels: "service_name"
+    labels:
+      service_name: "emqx"
 
   # PgAdmin for database management (optional dev tool)
   pgadmin:
@@ -85,6 +97,12 @@ services:
         condition: service_healthy
     networks:
       - cityear-network
+    logging:
+      driver: "json-file"
+      options:
+        labels: "service_name"
+    labels:
+      service_name: "api"
 
   backend-consumer:
     build: 
@@ -106,6 +124,12 @@ services:
         condition: service_healthy
     networks:
       - cityear-network
+    logging:
+      driver: "json-file"
+      options:
+        labels: "service_name"
+    labels:
+      service_name: "consumer"
 
   simulator:
     build: ./simulator
@@ -114,7 +138,7 @@ services:
       - "3001:3001"
     environment:
       - MQTT_BROKER_URL=mqtt://emqx:1883
-      - DEVICE_COUNT=500
+      - DEVICE_COUNT=1000
     volumes:
       - ./simulator/simulator.db:/usr/src/app/simulator.db
     depends_on:
@@ -122,6 +146,12 @@ services:
         condition: service_healthy
     networks:
       - cityear-network
+    logging:
+      driver: "json-file"
+      options:
+        labels: "service_name"
+    labels:
+      service_name: "simulator"
 
   frontend:
     build: ./frontend
@@ -135,6 +165,12 @@ services:
       - backend-api
     networks:
       - cityear-network
+    logging:
+      driver: "json-file"
+      options:
+        labels: "service_name"
+    labels:
+      service_name: "frontend"
 
   # ============================================================================
   # OBSERVABILITY STACK

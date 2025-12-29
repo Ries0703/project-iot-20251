@@ -46,7 +46,44 @@ discovery.docker "containers" {
 loki.source.docker "containers" {
   host       = "unix:///var/run/docker.sock"
   targets    = discovery.docker.containers.targets
+  forward_to = [loki.relabel.docker.receiver]
+  
+  // Extract container labels as Loki labels
+  relabel_rules = loki.relabel.docker_labels.rules
+}
+
+// Relabel Docker metadata to extract service_name
+loki.relabel "docker_labels" {
   forward_to = [loki.write.local.receiver]
+  
+  // Extract service_name from Docker label
+  rule {
+    source_labels = ["__meta_docker_container_label_service_name"]
+    target_label  = "service_name"
+  }
+  
+  // Fallback to container name if no service_name label
+  rule {
+    source_labels = ["__meta_docker_container_name"]
+    regex         = "/(.*)"
+    target_label  = "container_name"
+  }
+  
+  // Extract compose service name
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "compose_service"
+  }
+}
+
+loki.relabel "docker" {
+  forward_to = [loki.write.local.receiver]
+  
+  // Keep necessary labels
+  rule {
+    action = "labelmap"
+    regex  = "__meta_docker_container_label_(.+)"
+  }
 }
 
 // ============================================================================
