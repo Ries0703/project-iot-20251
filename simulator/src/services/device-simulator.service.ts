@@ -181,15 +181,7 @@ export class DeviceSimulatorService implements OnModuleInit {
 
         // Parallel publishing
         const promises = devices.map(async (device) => {
-            // DEBUG: Log if we are publishing for the problematic device
-            if (device.id.includes('d721aeca')) {
-                this.logger.warn(
-                    `⚠️ PUBLISHING for STOPPED device ${device.id}. isActive: ${device.isActive} (${typeof device.isActive})`,
-                );
-            }
             const noiseData = this.noiseGenerator.generateNoiseEvent();
-            // TODO: Use device profile to adjust noise generator args if needed
-
             const event: NoiseEvent = {
                 id: uuidv4(),
                 deviceId: device.id,
